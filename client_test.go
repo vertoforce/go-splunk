@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestClientSimple(t *testing.T) {
@@ -29,6 +30,7 @@ func TestClientSimple(t *testing.T) {
 		t.Error(err)
 		return
 	}
+	fmt.Printf("Job %s created\n", searchID)
 
 	jobDetails, err := c.GetSearchJob(context.Background(), searchID)
 	if err != nil {
@@ -38,5 +40,17 @@ func TestClientSimple(t *testing.T) {
 	if len(jobDetails.Entry) == 0 {
 		t.Errorf("Not enough entries returned")
 	}
-	fmt.Printf("%s: %s\n", jobDetails.Entry[0].Name, jobDetails.Entry[0].Content.Search)
+
+	// Wait on job
+	c.WaitOnJob(context.Background(), searchID)
+	fmt.Println("Job done")
+	time.Sleep(time.Millisecond * 50)
+
+	// Try getting results
+	results, err := c.GetSearchJobResults(context.Background(), searchID)
+	totalResults := 0
+	for range results {
+		totalResults++
+	}
+	fmt.Printf("Total resutls: %d\n", totalResults)
 }
