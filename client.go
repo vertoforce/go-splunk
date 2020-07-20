@@ -1,11 +1,12 @@
 package splunk
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"net/http"
+	"net/url"
 )
 
 const (
@@ -43,7 +44,7 @@ func NewClient(ctx context.Context, username, password string, config *Config) (
 	)
 
 	// Perform simple request to make sure login is valid
-	resp, err := c.MakeURLRequest(ctx, "GET", authContextSuffix, nil)
+	resp, err := c.BuildResponse(ctx, "GET", authContextSuffix, nil)
 	if err != nil {
 		return nil, fmt.Errorf("error making login request: %s", err)
 	}
@@ -54,12 +55,23 @@ func NewClient(ctx context.Context, username, password string, config *Config) (
 	return c, nil
 }
 
-// MakeURLRequest Makes a request using the provided suffix and body
-func (c *Client) MakeURLRequest(ctx context.Context, method, suffix string, body io.Reader) (*http.Response, error) {
+// BuildResponse is a helper function to make a request with parameters
+func (c *Client) BuildResponse(ctx context.Context, method, suffix string, params map[string]string) (*http.Response, error) {
+	// Build body
+	body := &bytes.Buffer{}
+	urlValues := url.Values{}
+	urlValues.Add("output_mode", "json")
+	for key, value := range params {
+		urlValues.Add(key, value)
+	}
+	body.Write([]byte(urlValues.Encode()))
+
+	// Build request
 	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("%s%s", c.config.BaseURL, suffix), body)
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 
 	return c.MakeRequest(req)
 }
