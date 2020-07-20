@@ -1,4 +1,4 @@
-# Splunk Enterprise Library
+# Splunk Enterprise API Go Library
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/vertoforce/go-splunk)](https://goreportcard.com/report/github.com/vertoforce/go-splunk)
 [![Documentation](https://godoc.org/github.com/vertoforce/go-splunk?status.svg)](https://godoc.org/github.com/vertoforce/go-splunk)
