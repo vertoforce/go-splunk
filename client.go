@@ -57,6 +57,8 @@ func NewClient(ctx context.Context, username, password string, config *Config) (
 
 // BuildResponse is a helper function to make a request with parameters
 func (c *Client) BuildResponse(ctx context.Context, method, suffix string, params map[string]string) (*http.Response, error) {
+	// Build URL
+	URL := fmt.Sprintf("%s%s", c.config.BaseURL, suffix)
 	// Build body
 	body := &bytes.Buffer{}
 	urlValues := url.Values{}
@@ -64,10 +66,18 @@ func (c *Client) BuildResponse(ctx context.Context, method, suffix string, param
 	for key, value := range params {
 		urlValues.Add(key, value)
 	}
-	body.Write([]byte(urlValues.Encode()))
+
+	switch method {
+	case "POST":
+		// Put in body
+		body.Write([]byte(urlValues.Encode()))
+	default:
+		// Put in URL
+		URL = fmt.Sprintf("%s?%s", URL, urlValues.Encode())
+	}
 
 	// Build request
-	req, err := http.NewRequestWithContext(ctx, method, fmt.Sprintf("%s%s", c.config.BaseURL, suffix), body)
+	req, err := http.NewRequestWithContext(ctx, method, URL, body)
 	if err != nil {
 		return nil, err
 	}

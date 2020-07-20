@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"time"
 )
 
 const (
@@ -145,4 +146,89 @@ func (c *Client) GetSearchJob(ctx context.Context, searchID string) (*JobSearchR
 	}
 
 	return &result, nil
+}
+
+// WaitOnJob Waits for a job dispatchState to be "DONE".
+//
+// If there is an error it returns.  If no jobs is found, it returns.
+//
+func (c *Client) WaitOnJob(ctx context.Context, searchID string) {
+	for {
+		job, err := c.GetSearchJob(ctx, searchID)
+		if err != nil {
+			return
+		}
+		if len(job.Entry) == 0 {
+			return
+		}
+		if job.Entry[0].Content.DispatchState == "DONE" {
+			return
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(time.Second * 3):
+		}
+	}
+
+}
+
+// SearchResults is the response when fetching a single page of results
+type SearchResults struct {
+	Preview    bool                     `json:"preview"`
+	InitOffset int64                    `json:"init_offset"`
+	Fields     []map[string]string      `json:"fields"`
+	Results    []map[string]interface{} `json:"results"`
+}
+
+// GetSearchJobResults Gets a channel of results from the job
+func (c *Client) GetSearchJobResults(ctx context.Context, searchID string) (chan map[string]interface{}, error) {
+	count := 100
+
+	// Make results channel with 4 page buffer
+	results := make(chan map[string]interface{}, count*4)
+
+	go func() {
+		defer close(results)
+
+		page := 0
+		for {
+			params := map[string]string{
+				"count":  fmt.Sprintf("%d", count),
+				"offset": fmt.Sprintf("%d", page*count),
+			}
+
+			resp, err := c.BuildResponse(ctx, "GET", fmt.Sprintf(searchJobSuffix, searchID)+"/results", params)
+			if err != nil {
+				return
+			}
+			if resp.StatusCode != 200 {
+				return
+			}
+
+			result := SearchResults{}
+			err = json.NewDecoder(resp.Body).Decode(&result)
+			if err != nil {
+				return
+			}
+
+			if len(result.Results) == 0 {
+				// Done
+				return
+			}
+
+			for _, result := range result.Results {
+				select {
+				case results <- result:
+				case <-ctx.Done():
+					return
+				}
+			}
+
+			page++
+		}
+	}()
+
+	return results, nil
 }
