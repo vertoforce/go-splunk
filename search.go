@@ -42,23 +42,26 @@ func (c *Client) CreateSearchJob(ctx context.Context, query string) (*Search, er
 	return search, nil
 }
 
+// JobSearchResult is what splunk returns when searching for a search job
 type JobSearchResult struct {
 	Generator Generator `json:"generator"`
 	Entry     []Entry   `json:"entry"`
 	Paging    Paging    `json:"paging"`
 }
 
+// Entry is a search job stored on the server is some state
 type Entry struct {
-	Name      string     `json:"name"`
-	ID        string     `json:"id"`
-	Updated   string     `json:"updated"`
-	Links     EntryLinks `json:"links"`
-	Published string     `json:"published"`
-	Author    string     `json:"author"`
-	Content   Content    `json:"content"`
+	Name          string        `json:"name"`
+	ID            string        `json:"id"`
+	Updated       string        `json:"updated"`
+	Links         interface{}   `json:"links"`
+	Published     string        `json:"published"`
+	Author        string        `json:"author"`
+	SearchContent SearchContent `json:"content"`
 }
 
-type Content struct {
+// SearchContent is the details about a searchJob
+type SearchContent struct {
 	BundleVersion                     string        `json:"bundleVersion"`
 	CanSummarize                      bool          `json:"canSummarize"`
 	CursorTime                        string        `json:"cursorTime"`
@@ -123,17 +126,6 @@ type Content struct {
 	RemoteSearchLogs                  []string      `json:"remoteSearchLogs"`
 }
 
-type EntryLinks struct {
-	Alternate      string `json:"alternate"`
-	SearchLog      string `json:"search.log"`
-	Events         string `json:"events"`
-	Results        string `json:"results"`
-	ResultsPreview string `json:"results_preview"`
-	Timeline       string `json:"timeline"`
-	Summary        string `json:"summary"`
-	Control        string `json:"control"`
-}
-
 // GetSearchJob Gets details about a current search job
 func (c *Client) GetSearchJob(ctx context.Context, searchID string) (*JobSearchResult, error) {
 	resp, err := c.BuildResponse(ctx, "GET", fmt.Sprintf(searchJobSuffix, searchID), nil)
@@ -167,7 +159,7 @@ func (s *Search) Wait(ctx context.Context) {
 		if len(job.Entry) == 0 {
 			return
 		}
-		if job.Entry[0].Content.DispatchState == "DONE" {
+		if job.Entry[0].SearchContent.DispatchState == "DONE" {
 			return
 		}
 
