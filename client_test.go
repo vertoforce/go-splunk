@@ -25,7 +25,7 @@ func TestClientSimple(t *testing.T) {
 	}
 
 	// Try creating a simple job
-	searchJob, err := c.CreateSearchJob(context.Background(), `* TEST`)
+	searchJob, err := c.CreateSearchJob(context.Background(), `* TEST`, nil)
 	if err != nil {
 		t.Error(err)
 		return
