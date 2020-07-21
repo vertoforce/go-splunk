@@ -173,18 +173,21 @@ func (s *Search) Wait(ctx context.Context) {
 
 // SearchResults is the response when fetching a single page of results
 type SearchResults struct {
-	Preview    bool                     `json:"preview"`
-	InitOffset int64                    `json:"init_offset"`
-	Fields     []map[string]string      `json:"fields"`
-	Results    []map[string]interface{} `json:"results"`
+	Preview    bool                `json:"preview"`
+	InitOffset int64               `json:"init_offset"`
+	Fields     []map[string]string `json:"fields"`
+	Results    []SearchResult      `json:"results"`
 }
 
+// SearchResult is a single search result from a splunk search
+type SearchResult map[string]interface{}
+
 // GetResults Gets a channel of results from the search job
-func (s *Search) GetResults(ctx context.Context) (chan map[string]interface{}, error) {
+func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
 	count := 100
 
 	// Make results channel with 4 page buffer
-	results := make(chan map[string]interface{}, count*4)
+	results := make(chan SearchResult, count*4)
 
 	go func() {
 		defer close(results)
