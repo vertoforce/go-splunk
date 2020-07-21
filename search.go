@@ -36,7 +36,8 @@ func (c *Client) CreateSearchJob(ctx context.Context, query string, params map[s
 		return nil, err
 	}
 	if resp.StatusCode != 201 {
-		return nil, fmt.Errorf("bad status code: %d", resp.StatusCode)
+		body, _ := ioutil.ReadAll(resp.Body)
+		return nil, fmt.Errorf("bad status code: %d, body: %s", resp.StatusCode, string(body))
 	}
 
 	search := &Search{}
