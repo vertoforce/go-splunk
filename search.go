@@ -20,10 +20,18 @@ type Search struct {
 }
 
 // CreateSearchJob Creates a search and returns the search object
-func (c *Client) CreateSearchJob(ctx context.Context, query string) (*Search, error) {
-	resp, err := c.BuildResponse(ctx, "POST", searchJobsSuffix, map[string]string{
-		"search": fmt.Sprintf("search %s", query),
-	})
+//
+// Params are any other parameters you want to specific from [the documentation](https://docs.splunk.com/Documentation/Splunk/8.0.5/RESTREF/RESTsearch#search.2Fjobs)
+func (c *Client) CreateSearchJob(ctx context.Context, query string, params map[string]string) (*Search, error) {
+	// Build params
+	paramsToSend := params
+	if paramsToSend == nil {
+		paramsToSend = map[string]string{}
+	}
+	paramsToSend["search"] = fmt.Sprintf("search %s", query)
+
+	// Make request
+	resp, err := c.BuildResponse(ctx, "POST", searchJobsSuffix, paramsToSend)
 	if err != nil {
 		return nil, err
 	}
