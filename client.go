@@ -15,6 +15,7 @@ const (
 
 // Client is a splunk API client
 type Client struct {
+	// Computed base64 auth header
 	authHeader string
 
 	config *Config
@@ -24,11 +25,16 @@ type Client struct {
 //
 // If HTTPClient is nil, the default will be used
 type Config struct {
+	// Used if you want to use a custom HTTP client
 	HTTPClient *http.Client
-	BaseURL    string
+
+	// Base URL of your splunk instance.
+	// Do not include a `/`` at the end.
+	// ex: https://localhost:8089
+	BaseURL string
 }
 
-// NewClient Creates and new splunk api client
+// NewClient Creates and new splunk api client using the provided user/pass and config
 func NewClient(ctx context.Context, username, password string, config *Config) (*Client, error) {
 	configCopy := *config
 	c := &Client{
@@ -55,10 +61,17 @@ func NewClient(ctx context.Context, username, password string, config *Config) (
 	return c, nil
 }
 
-// BuildResponse is a helper function to make a request with parameters
+// BuildResponse is a helper function to make a request with parameters.
+//
+// The suffix is whatever goes after the baseURL.  The suffix can optionally have a `/` at the beginning
 func (c *Client) BuildResponse(ctx context.Context, method, suffix string, params map[string]string) (*http.Response, error) {
+	if len(suffix) > 0 && suffix[0] != '/' {
+		suffix = "/" + suffix
+	}
+
 	// Build URL
 	URL := fmt.Sprintf("%s%s", c.config.BaseURL, suffix)
+
 	// Build body
 	body := &bytes.Buffer{}
 	urlValues := url.Values{}
@@ -67,6 +80,7 @@ func (c *Client) BuildResponse(ctx context.Context, method, suffix string, param
 		urlValues.Add(key, value)
 	}
 
+	// Inject the parmaters in the request
 	switch method {
 	case "POST":
 		// Put in body

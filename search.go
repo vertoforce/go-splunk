@@ -19,7 +19,7 @@ type Search struct {
 	client   *Client
 }
 
-// CreateSearchJob Creates a search and returns the search ID
+// CreateSearchJob Creates a search and returns the search object
 func (c *Client) CreateSearchJob(ctx context.Context, query string) (*Search, error) {
 	resp, err := c.BuildResponse(ctx, "POST", searchJobsSuffix, map[string]string{
 		"search": fmt.Sprintf("search %s", query),
