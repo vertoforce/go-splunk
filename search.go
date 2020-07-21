@@ -13,28 +13,33 @@ const (
 	searchJobSuffix  = "/services/search/jobs/%s"
 )
 
+// Search is a search in splunk
+type Search struct {
+	SearchID string `json:"sid"`
+	client   *Client
+}
+
 // CreateSearchJob Creates a search and returns the search ID
-func (c *Client) CreateSearchJob(ctx context.Context, query string) (SearchID string, err error) {
+func (c *Client) CreateSearchJob(ctx context.Context, query string) (*Search, error) {
 	resp, err := c.BuildResponse(ctx, "POST", searchJobsSuffix, map[string]string{
 		"search": fmt.Sprintf("search %s", query),
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	if resp.StatusCode != 201 {
-		return "", fmt.Errorf("bad status code: %d", resp.StatusCode)
+		return nil, fmt.Errorf("bad status code: %d", resp.StatusCode)
 	}
 
-	result := struct {
-		SearchID string `json:"sid"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(&result)
+	search := &Search{}
+	err = json.NewDecoder(resp.Body).Decode(search)
 	if err != nil {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return "", fmt.Errorf("failed to unmarshal: %s, body: %s", err, string(body))
+		return nil, fmt.Errorf("failed to unmarshal: %s, body: %s", err, string(body))
 	}
+	search.client = c
 
-	return result.SearchID, nil
+	return search, nil
 }
 
 type JobSearchResult struct {
@@ -148,13 +153,14 @@ func (c *Client) GetSearchJob(ctx context.Context, searchID string) (*JobSearchR
 	return &result, nil
 }
 
-// WaitOnJob Waits for a job dispatchState to be "DONE".
+// Wait for a search job to be done and the results available.
+// It waits for the dispatchState to be "DONE".
 //
 // If there is an error it returns.  If no jobs is found, it returns.
 //
-func (c *Client) WaitOnJob(ctx context.Context, searchID string) {
+func (s *Search) Wait(ctx context.Context) {
 	for {
-		job, err := c.GetSearchJob(ctx, searchID)
+		job, err := s.client.GetSearchJob(ctx, s.SearchID)
 		if err != nil {
 			return
 		}
@@ -171,7 +177,6 @@ func (c *Client) WaitOnJob(ctx context.Context, searchID string) {
 		case <-time.After(time.Second * 3):
 		}
 	}
-
 }
 
 // SearchResults is the response when fetching a single page of results
@@ -182,8 +187,8 @@ type SearchResults struct {
 	Results    []map[string]interface{} `json:"results"`
 }
 
-// GetSearchJobResults Gets a channel of results from the job
-func (c *Client) GetSearchJobResults(ctx context.Context, searchID string) (chan map[string]interface{}, error) {
+// GetResults Gets a channel of results from the search job
+func (s *Search) GetResults(ctx context.Context) (chan map[string]interface{}, error) {
 	count := 100
 
 	// Make results channel with 4 page buffer
@@ -199,7 +204,7 @@ func (c *Client) GetSearchJobResults(ctx context.Context, searchID string) (chan
 				"offset": fmt.Sprintf("%d", page*count),
 			}
 
-			resp, err := c.BuildResponse(ctx, "GET", fmt.Sprintf(searchJobSuffix, searchID)+"/results", params)
+			resp, err := s.client.BuildResponse(ctx, "GET", fmt.Sprintf(searchJobSuffix, s.SearchID)+"/results", params)
 			if err != nil {
 				return
 			}

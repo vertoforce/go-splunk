@@ -25,14 +25,14 @@ func TestClientSimple(t *testing.T) {
 	}
 
 	// Try creating a simple job
-	searchID, err := c.CreateSearchJob(context.Background(), `* TEST`)
+	searchJob, err := c.CreateSearchJob(context.Background(), `* TEST`)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	fmt.Printf("Job %s created\n", searchID)
+	fmt.Printf("Job %s created\n", searchJob.SearchID)
 
-	jobDetails, err := c.GetSearchJob(context.Background(), searchID)
+	jobDetails, err := c.GetSearchJob(context.Background(), searchJob.SearchID)
 	if err != nil {
 		t.Error(err)
 		return
@@ -42,15 +42,15 @@ func TestClientSimple(t *testing.T) {
 	}
 
 	// Wait on job
-	c.WaitOnJob(context.Background(), searchID)
+	searchJob.Wait(context.Background())
 	fmt.Println("Job done")
 	time.Sleep(time.Millisecond * 50)
 
 	// Try getting results
-	results, err := c.GetSearchJobResults(context.Background(), searchID)
+	results, err := searchJob.GetResults(context.Background())
 	totalResults := 0
 	for range results {
 		totalResults++
 	}
-	fmt.Printf("Total resutls: %d\n", totalResults)
+	fmt.Printf("Total results: %d\n", totalResults)
 }
