@@ -191,7 +191,11 @@ type SearchResults struct {
 // SearchResult is a single search result from a splunk search
 type SearchResult map[string]interface{}
 
-// GetResults Gets a channel of results from the search job
+// GetResults Gets a channel of results from the search job.
+//
+// If the search is still running, it will get the available results, and wait for
+// results to continue populating.  It will not close the channel until the search is finished
+// AND it sends all results
 func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
 	count := 100
 
@@ -201,18 +205,19 @@ func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
 	go func() {
 		defer close(results)
 
-		page := 0
+		offset := 0
 		for {
 			params := map[string]string{
 				"count":  fmt.Sprintf("%d", count),
-				"offset": fmt.Sprintf("%d", page*count),
+				"offset": fmt.Sprintf("%d", offset),
 			}
 
-			resp, err := s.client.BuildResponse(ctx, "GET", fmt.Sprintf(searchJobSuffix, s.SearchID)+"/results", params)
+			resp, err := s.client.BuildResponse(ctx, "GET", fmt.Sprintf(searchJobSuffix, s.SearchID)+"/results_preview", params)
 			if err != nil {
 				return
 			}
 			if resp.StatusCode != 200 {
+				// No more content
 				return
 			}
 
@@ -222,8 +227,8 @@ func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
 				return
 			}
 
-			if len(result.Results) == 0 {
-				// Done
+			if len(result.Results) == 0 && !result.Preview {
+				// No more results and these results aren't a preview, we are done
 				return
 			}
 
@@ -235,7 +240,14 @@ func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
 				}
 			}
 
-			page++
+			if result.Preview {
+				// The search is still running and we've reached the end of the available results
+				// Wait a bit before making the next request so we aren't spamming when
+				// there are no results
+				time.Sleep(time.Second)
+			}
+
+			offset += len(result.Results)
 		}
 	}()
 
