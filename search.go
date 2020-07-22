@@ -42,6 +42,7 @@ func (c *Client) CreateSearchJob(ctx context.Context, query string, params map[s
 
 	search := &Search{}
 	err = json.NewDecoder(resp.Body).Decode(search)
+	resp.Body.Close()
 	if err != nil {
 		body, _ := ioutil.ReadAll(resp.Body)
 		return nil, fmt.Errorf("failed to unmarshal: %s, body: %s", err, string(body))
@@ -147,6 +148,7 @@ func (c *Client) GetSearchJob(ctx context.Context, searchID string) (*JobSearchR
 
 	result := JobSearchResult{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
+	resp.Body.Close()
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal: %s", err)
 	}
@@ -223,6 +225,7 @@ func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
 
 			result := SearchResults{}
 			err = json.NewDecoder(resp.Body).Decode(&result)
+			resp.Body.Close()
 			if err != nil {
 				return
 			}
