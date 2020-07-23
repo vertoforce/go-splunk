@@ -3,6 +3,7 @@ package splunk
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 )
 
@@ -35,16 +36,14 @@ func (e SearchResult) UnMarshal(v interface{}) error {
 					}
 					valueOf.Field(i).Set(reflect.ValueOf(parsedTime))
 				case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64:
-					// Make sure the value is a float64
-					floatValue, ok := value.(float64)
-					if !ok {
+					floatValue, err := getFloatValue(value)
+					if err != nil {
 						return fmt.Errorf("Could not parse a number field from splunk that we want to fill as a number in the struct.  splunk field: %s, struct field: %s, value: %v", key, thisField.Name, value)
 					}
 					valueOf.Field(i).SetInt(int64(floatValue))
 				case reflect.Float32, reflect.Float64:
-					// Make sure the value is a float64
-					floatValue, ok := value.(float64)
-					if !ok {
+					floatValue, err := getFloatValue(value)
+					if err != nil {
 						return fmt.Errorf("Could not parse a number field from splunk that we want to fill as a number in the struct.  splunk field: %s, struct field: %s, value: %v", key, thisField.Name, value)
 					}
 					valueOf.Field(i).SetFloat(floatValue)
@@ -55,4 +54,25 @@ func (e SearchResult) UnMarshal(v interface{}) error {
 		}
 	}
 	return nil
+}
+
+// getFloatValue will check if the interface is a float64, or we can parse it, or return an error
+func getFloatValue(i interface{}) (float64, error) {
+	floatValue, ok := i.(float64)
+	if ok {
+		return floatValue, nil
+	}
+
+	// Try parsing it as a string
+	if stringValue, ok := i.(string); ok {
+		floatValue, err := strconv.ParseFloat(stringValue, 64)
+		if err == nil {
+			// Good!
+			return floatValue, nil
+		}
+	}
+
+	// Can't do it, error
+	return 0, fmt.Errorf("Could not parse as number")
+
 }
