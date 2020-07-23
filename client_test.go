@@ -46,11 +46,24 @@ func TestClientSimple(t *testing.T) {
 	// time.Sleep(time.Millisecond * 50)
 
 	// Try getting results
-	results, err := searchJob.GetResults(context.Background())
+	searchContext, cancel := context.WithCancel(context.Background())
+	results, err := searchJob.GetResults(searchContext)
 	totalResults := 0
 	for result := range results {
 		totalResults++
 		fmt.Printf("%d %s\n", totalResults, result["_time"])
+		if totalResults >= 50 {
+			cancel()
+			break
+		}
 	}
+	cancel()
 	fmt.Printf("Total results: %d\n", totalResults)
+
+	// Cancel and remove job
+	err = searchJob.Stop(context.Background())
+	if err != nil {
+		t.Error(err)
+		return
+	}
 }
