@@ -198,6 +198,10 @@ type SearchResult map[string]interface{}
 // If the search is still running, it will get the available results, and wait for
 // results to continue populating.  It will not close the channel until the search is finished
 // AND it sends all results
+//
+// *NOTE*: If you are performing a search with changing results (like a stats command)
+// you must wait for the search to complete before getting results.  Otherwise you will get available
+// results that will later be changed.
 func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
 	count := 100
 
