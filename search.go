@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	searchJobsSuffix = "/services/search/jobs"
-	searchJobSuffix  = "/services/search/jobs/%s"
+	searchJobsSuffix       = "/services/search/jobs"
+	searchJobSuffix        = "/services/search/jobs/%s"
+	searchControlJobSuffix = "/services/search/jobs/%s/control"
 )
 
 // Search is a search in splunk
@@ -261,9 +262,24 @@ func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
 	return results, nil
 }
 
-// Stop the job in splunk and remove it.  If you stop an already stopped job, it will do nothing
-func (s *Search) Stop(ctx context.Context) error {
+// Delete the job in splunk and remove it.  If you stop an already stopped job, it will do nothing
+func (s *Search) Delete(ctx context.Context) error {
 	resp, err := s.client.BuildResponse(ctx, "DELETE", fmt.Sprintf(searchJobSuffix, s.SearchID), nil)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("bad status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+// StopAndFinalize the job in splunk.
+func (s *Search) StopAndFinalize(ctx context.Context) error {
+	resp, err := s.client.BuildResponse(ctx, "POST", fmt.Sprintf(searchControlJobSuffix, s.SearchID), map[string]string{
+		"action": "finalize",
+	})
 	if err != nil {
 		return err
 	}
