@@ -78,20 +78,20 @@ type SearchContent struct {
 	DefaultSaveTTL                    string        `json:"defaultSaveTTL"`
 	DefaultTTL                        string        `json:"defaultTTL"`
 	Delegate                          string        `json:"delegate"`
-	DiskUsage                         int64         `json:"diskUsage"`
+	DiskUsage                         float64       `json:"diskUsage"`
 	DispatchState                     string        `json:"dispatchState"`
-	DoneProgress                      int64         `json:"doneProgress"`
-	DropCount                         int64         `json:"dropCount"`
+	DoneProgress                      float64       `json:"doneProgress"`
+	DropCount                         float64       `json:"dropCount"`
 	EarliestTime                      string        `json:"earliestTime"`
-	EventAvailableCount               int64         `json:"eventAvailableCount"`
-	EventCount                        int64         `json:"eventCount"`
-	EventFieldCount                   int64         `json:"eventFieldCount"`
+	EventAvailableCount               float64       `json:"eventAvailableCount"`
+	EventCount                        float64       `json:"eventCount"`
+	EventFieldCount                   float64       `json:"eventFieldCount"`
 	EventIsStreaming                  bool          `json:"eventIsStreaming"`
 	EventIsTruncated                  bool          `json:"eventIsTruncated"`
 	EventSearch                       string        `json:"eventSearch"`
 	EventSorting                      string        `json:"eventSorting"`
-	IndexEarliestTime                 int64         `json:"indexEarliestTime"`
-	IndexLatestTime                   int64         `json:"indexLatestTime"`
+	IndexEarliestTime                 float64       `json:"indexEarliestTime"`
+	IndexLatestTime                   float64       `json:"indexLatestTime"`
 	IsBatchModeSearch                 bool          `json:"isBatchModeSearch"`
 	IsDone                            bool          `json:"isDone"`
 	IsEventsPreviewEnabled            bool          `json:"isEventsPreviewEnabled"`
@@ -108,29 +108,29 @@ type SearchContent struct {
 	Keywords                          string        `json:"keywords"`
 	Label                             string        `json:"label"`
 	NormalizedSearch                  string        `json:"normalizedSearch"`
-	NumPreviews                       int64         `json:"numPreviews"`
+	NumPreviews                       float64       `json:"numPreviews"`
 	OptimizedSearch                   string        `json:"optimizedSearch"`
 	Phase0                            string        `json:"phase0"`
 	Phase1                            string        `json:"phase1"`
 	PID                               string        `json:"pid"`
-	Priority                          int64         `json:"priority"`
+	Priority                          float64       `json:"priority"`
 	Provenance                        string        `json:"provenance"`
 	RemoteSearch                      string        `json:"remoteSearch"`
 	ReportSearch                      string        `json:"reportSearch"`
-	ResultCount                       int64         `json:"resultCount"`
+	ResultCount                       float64       `json:"resultCount"`
 	ResultIsStreaming                 bool          `json:"resultIsStreaming"`
-	ResultPreviewCount                int64         `json:"resultPreviewCount"`
+	ResultPreviewCount                float64       `json:"resultPreviewCount"`
 	RunDuration                       float64       `json:"runDuration"`
 	SampleRatio                       string        `json:"sampleRatio"`
 	SampleSeed                        string        `json:"sampleSeed"`
-	ScanCount                         int64         `json:"scanCount"`
+	ScanCount                         float64       `json:"scanCount"`
 	Search                            string        `json:"search"`
 	SearchCanBeEventType              bool          `json:"searchCanBeEventType"`
-	SearchTotalBucketsCount           int64         `json:"searchTotalBucketsCount"`
-	SearchTotalEliminatedBucketsCount int64         `json:"searchTotalEliminatedBucketsCount"`
+	SearchTotalBucketsCount           float64       `json:"searchTotalBucketsCount"`
+	SearchTotalEliminatedBucketsCount float64       `json:"searchTotalEliminatedBucketsCount"`
 	Sid                               string        `json:"sid"`
-	StatusBuckets                     int64         `json:"statusBuckets"`
-	TTL                               int64         `json:"ttl"`
+	StatusBuckets                     float64       `json:"statusBuckets"`
+	TTL                               float64       `json:"ttl"`
 	Messages                          []interface{} `json:"messages"`
 	SearchProviders                   []string      `json:"searchProviders"`
 	RemoteSearchLogs                  []string      `json:"remoteSearchLogs"`
@@ -161,22 +161,22 @@ func (c *Client) GetSearchJob(ctx context.Context, searchID string) (*JobSearchR
 //
 // If there is an error it returns.  If no jobs is found, it returns.
 //
-func (s *Search) Wait(ctx context.Context) {
+func (s *Search) Wait(ctx context.Context) error {
 	for {
 		job, err := s.client.GetSearchJob(ctx, s.SearchID)
 		if err != nil {
-			return
+			return err
 		}
 		if len(job.Entry) == 0 {
-			return
+			return fmt.Errorf("no search found")
 		}
 		if job.Entry[0].SearchContent.DispatchState == "DONE" {
-			return
+			return nil
 		}
 
 		select {
 		case <-ctx.Done():
-			return
+			return ctx.Err()
 		case <-time.After(time.Second * 3):
 		}
 	}
