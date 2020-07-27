@@ -61,7 +61,7 @@ func TestClientSimple(t *testing.T) {
 	fmt.Printf("Total results: %d\n", totalResults)
 
 	// Cancel and remove job
-	err = searchJob.Stop(context.Background())
+	err = searchJob.Delete(context.Background())
 	if err != nil {
 		t.Error(err)
 		return
