@@ -29,7 +29,7 @@ func TestClientSimple(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	fmt.Printf("Job %s created\n", searchJob.SearchID)
+	fmt.Printf("Job %s created: %s\n", searchJob.SearchID, searchJob.URL())
 
 	jobDetails, err := c.GetSearchJob(context.Background(), searchJob.SearchID)
 	if err != nil {

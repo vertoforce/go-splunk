@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/url"
 	"time"
 )
 
@@ -288,4 +289,22 @@ func (s *Search) StopAndFinalize(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// URL Returns the human vistable URL to see the results of the search
+//
+// By default it will use the config base URL with the port set to 80, but you can pass in a custom base URL
+func (s *Search) URL(customBaseURL ...string) string {
+	baseURL := ""
+	if len(customBaseURL) > 0 {
+		baseURL = customBaseURL[0]
+	} else {
+		baseURLP, err := url.Parse(s.client.config.BaseURL)
+		if err != nil {
+			return ""
+		}
+		baseURLP.Host = baseURLP.Hostname()
+		baseURL = baseURLP.String()
+	}
+	return fmt.Sprintf("%s/en-US/app/search/search?sid=%s", baseURL, s.SearchID)
 }
