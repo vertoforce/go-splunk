@@ -195,6 +195,14 @@ type SearchResults struct {
 // SearchResult is a single search result from a splunk search
 type SearchResult map[string]interface{}
 
+// GetFieldString retuns the string value of the field, or "" if it does not exist
+func (s SearchResult) GetFieldString(fieldName string) string {
+	if val, ok := s[fieldName]; ok {
+		return fmt.Sprintf("%v", val)
+	}
+	return ""
+}
+
 // GetResults Gets a channel of results from the search job.
 //
 // If the search is still running, it will get the available results, and wait for
