@@ -158,7 +158,7 @@ func (c *Client) GetSearchJob(ctx context.Context, searchID string) (*JobSearchR
 	return &result, nil
 }
 
-// Wait for a search job to be done and the results available.
+// Wait for a search job to be done.
 // It waits for the dispatchState to be "DONE".
 //
 // If there is an error it returns.  If no jobs is found, it returns.
@@ -213,6 +213,7 @@ func (s SearchResult) GetFieldString(fieldName string) string {
 // you must wait for the search to complete before getting results.  Otherwise you will get available
 // results that will later be changed.
 func (s *Search) GetResults(ctx context.Context) (chan SearchResult, error) {
+	// Number of results per page
 	count := 100
 
 	// Make results channel with 4 page buffer
