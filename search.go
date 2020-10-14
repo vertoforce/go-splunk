@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"time"
 )
@@ -156,6 +157,18 @@ func (c *Client) GetSearchJob(ctx context.Context, searchID string) (*JobSearchR
 	}
 
 	return &result, nil
+}
+
+// DeleteSearchJob Delete current search job
+func (c *Client) DeleteSearchJob(ctx context.Context, searchID string) error {
+	resp, err := c.BuildResponse(ctx, http.MethodDelete, fmt.Sprintf(searchJobSuffix, searchID), nil)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("bad status code: %d", resp.StatusCode)
+	}
+	return nil
 }
 
 // Wait for a search job to be done.
