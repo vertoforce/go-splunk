@@ -2,6 +2,7 @@ package splunk
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -48,6 +49,43 @@ func TestClient_DeleteSearchJob(t *testing.T) {
 			},
 		}
 		err := client.DeleteSearchJob(context.Background(), "job_id_1")
+		require.NoError(t, err)
+	})
+}
+
+func TestClient_RunSearchJobControlCommand(t *testing.T) {
+	t.Run("ok", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+			switch {
+			case req.Method != http.MethodPost:
+				rw.WriteHeader(http.StatusMethodNotAllowed)
+				return
+			case req.RequestURI != "/services/search/jobs/job_id_1/control":
+				rw.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			b, err := ioutil.ReadAll(req.Body)
+			if err != nil {
+				rw.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			if string(b) != "action=cancel&output_mode=json" {
+				rw.WriteHeader(http.StatusBadRequest)
+				return
+			}
+
+			rw.WriteHeader(http.StatusOK)
+		}))
+		defer server.Close()
+		client := &Client{
+			config: &Config{
+				BaseURL:    server.URL,
+				HTTPClient: http.DefaultClient,
+			},
+		}
+		err := client.RunSearchJobControlCommand(context.Background(), "job_id_1", ControlCommandCancel)
 		require.NoError(t, err)
 	})
 }
