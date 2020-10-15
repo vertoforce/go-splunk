@@ -7,13 +7,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
 const (
-	searchJobsSuffix       = "/services/search/jobs"
-	searchJobSuffix        = "/services/search/jobs/%s"
-	searchControlJobSuffix = "/services/search/jobs/%s/control"
+	searchJobsSuffix                = "/services/search/jobs"
+	searchJobSuffix                 = "/services/search/jobs/%s"
+	searchControlJobSuffix          = "/services/search/jobs/%s/control"
+	searchConcurrencySettingsSuffix = "/services/search/concurrency-settings/scheduler"
 )
 
 // Search is a search in splunk
@@ -162,6 +164,25 @@ func (c *Client) GetSearchJob(ctx context.Context, searchID string) (*JobSearchR
 // DeleteSearchJob Delete current search job
 func (c *Client) DeleteSearchJob(ctx context.Context, searchID string) error {
 	resp, err := c.BuildResponse(ctx, http.MethodDelete, fmt.Sprintf(searchJobSuffix, searchID), nil)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("bad status code: %d", resp.StatusCode)
+	}
+	return nil
+}
+
+// UpdateSearchConcurrencySettingsScheduler Edit settings that determine concurrent scheduled search limits.
+func (c *Client) UpdateSearchConcurrencySettingsScheduler(ctx context.Context, req *UpdateSearchConcurrencySettingsScheduleReq) error {
+	params := make(map[string]string)
+	if req.MaxSearchesPer != 0 {
+		params["max_searches_perc"] = strconv.Itoa(req.MaxSearchesPer)
+	}
+	if req.AutoSummaryPer != 0 {
+		params["auto_summary_perc"] = strconv.Itoa(req.AutoSummaryPer)
+	}
+	resp, err := c.BuildResponse(ctx, http.MethodPost, searchConcurrencySettingsSuffix, params)
 	if err != nil {
 		return err
 	}
