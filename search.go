@@ -171,6 +171,19 @@ func (c *Client) DeleteSearchJob(ctx context.Context, searchID string) error {
 	return nil
 }
 
+// RunSearchJobControlCommand Run a job control command for the {search_id} search.
+func (c *Client) RunSearchJobControlCommand(ctx context.Context, searchID string, action ControlCommand) error {
+	params := map[string]string{"action": action.String()}
+	resp, err := c.BuildResponse(ctx, http.MethodPost, fmt.Sprintf(searchControlJobSuffix, searchID), params)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("bad status code: %d", resp.StatusCode)
+	}
+	return nil
+}
+
 // Wait for a search job to be done.
 // It waits for the dispatchState to be "DONE".
 //
