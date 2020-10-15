@@ -173,13 +173,14 @@ func (c *Client) DeleteSearchJob(ctx context.Context, searchID string) error {
 	return nil
 }
 
+// UpdateSearchConcurrencySettingsScheduler Edit settings that determine concurrent scheduled search limits.
 func (c *Client) UpdateSearchConcurrencySettingsScheduler(ctx context.Context, req *UpdateSearchConcurrencySettingsScheduleReq) error {
 	params := make(map[string]string)
-	if req.MaxSearchesPer != nil {
-		params["max_searches_perc"] = strconv.Itoa(*req.MaxSearchesPer)
+	if req.MaxSearchesPer != 0 {
+		params["max_searches_perc"] = strconv.Itoa(req.MaxSearchesPer)
 	}
-	if req.AutoSummaryPer != nil {
-		params["auto_summary_perc"] = strconv.Itoa(*req.AutoSummaryPer)
+	if req.AutoSummaryPer != 0 {
+		params["auto_summary_perc"] = strconv.Itoa(req.AutoSummaryPer)
 	}
 	resp, err := c.BuildResponse(ctx, http.MethodPost, searchConcurrencySettingsSuffix, params)
 	if err != nil {

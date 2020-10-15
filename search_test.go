@@ -85,8 +85,10 @@ func TestClient_UpdateSearchConcurrencySettingsScheduler(t *testing.T) {
 				HTTPClient: http.DefaultClient,
 			},
 		}
-		req := new(UpdateSearchConcurrencySettingsScheduleReq)
-		req = req.SetAutoSummaryPer(60).SetMaxSearchesPer(60)
+		req := &UpdateSearchConcurrencySettingsScheduleReq{
+			MaxSearchesPer: 60,
+			AutoSummaryPer: 60,
+		}
 		err := client.UpdateSearchConcurrencySettingsScheduler(context.Background(), req)
 		require.NoError(t, err)
 	})
