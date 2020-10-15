@@ -2,10 +2,6 @@ package splunk
 
 type ControlCommand string
 
-func (c ControlCommand) String() string {
-	return string(c)
-}
-
 const (
 	ControlCommandPause           ControlCommand = "pause"
 	ControlCommandUnpause         ControlCommand = "unpause"

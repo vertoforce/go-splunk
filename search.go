@@ -173,7 +173,7 @@ func (c *Client) DeleteSearchJob(ctx context.Context, searchID string) error {
 
 // RunSearchJobControlCommand Run a job control command for the {search_id} search.
 func (c *Client) RunSearchJobControlCommand(ctx context.Context, searchID string, action ControlCommand) error {
-	params := map[string]string{"action": action.String()}
+	params := map[string]string{"action": string(action)}
 	resp, err := c.BuildResponse(ctx, http.MethodPost, fmt.Sprintf(searchControlJobSuffix, searchID), params)
 	if err != nil {
 		return err
