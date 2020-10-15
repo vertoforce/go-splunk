@@ -12,16 +12,8 @@ type Paging struct {
 }
 
 type UpdateSearchConcurrencySettingsScheduleReq struct {
-	MaxSearchesPer *int
-	AutoSummaryPer *int
-}
-
-func (u *UpdateSearchConcurrencySettingsScheduleReq) SetMaxSearchesPer(value int) *UpdateSearchConcurrencySettingsScheduleReq {
-	u.MaxSearchesPer = &value
-	return u
-}
-
-func (u *UpdateSearchConcurrencySettingsScheduleReq) SetAutoSummaryPer(value int) *UpdateSearchConcurrencySettingsScheduleReq {
-	u.AutoSummaryPer = &value
-	return u
+	// MaxSearchesPer The maximum number of searches the scheduler can run as a percentage of the maximum number of concurrent searches. Default: 50.
+	MaxSearchesPer int
+	// AutoSummaryPer The maximum number of concurrent searches to be allocated for auto summarization, as a percentage of the concurrent searches that the scheduler can run. Default: 50.
+	AutoSummaryPer int
 }
